@@ -8,6 +8,8 @@
 #include<vector>
 #include<string>
 
+using namespace std;
+
 class PUReweight{
 public:
   //PUReweight(int nFiles, char** fileNames, std::string PUfilename);

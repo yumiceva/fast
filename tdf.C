@@ -71,14 +71,14 @@ auto calcRelIso = [](const vector<float> muPt, const vector<float> muPFChIso, co
   return relIsoVec;
 };
 
-auto getVetoElectrons = [](const vector<float> elePt, const vector<float> eleEta, const vector<float> elePhi, const vector<unsigned short> eleIDbit, 
+auto getVetoElectrons = [](const vector<float> elePt, const vector<float> eleEta, const vector<float> eleSCEta, const vector<float> elePhi, const vector<unsigned short> eleIDbit, 
                            const vector<float> eleD0, const vector<float> eleDz) {
   FourVectors list;
   float cutD0 = 0.05; //barrel
   float cutDz = 0.1; // barrel
   for (unsigned int t=0; t< elePt.size(); ++t ) {
     bool cutbasedID_veto = ( eleIDbit[t] >> 0 & 1);
-    bool passEtaEBEEGap = (fabs(eleEta[t]) < 1.4442) || (fabs(eleEta[t]) > 1.566);
+    bool passEtaEBEEGap = (fabs(eleSCEta[t]) < 1.4442) || (fabs(eleSCEta[t]) > 1.566);
     
     if ( fabs(eleEta[t]) > 1.479 ) {
       // endcap
@@ -93,7 +93,9 @@ auto getVetoElectrons = [](const vector<float> elePt, const vector<float> eleEta
          eleDz[t] < cutDz ) {
      
       CylFourVector cp4( elePt[t], eleEta[t], elePhi[t]);
-      FourVector p4( cp4.X(), cp4.Y(), cp4.Z(), 0 );
+      double M = 0;
+      double E = sqrt(cp4.R() * cp4.R() + M * M);
+      FourVector p4( cp4.X(), cp4.Y(), cp4.Z(), E );
       list.emplace_back( p4 );
     }
   }
@@ -105,7 +107,7 @@ auto getTightJets = [](const vector<int> jetID, const vector<float> jetPt, const
   FourVectors list;
   for (unsigned int t=0; t< jetPt.size(); ++t ) {
     if ( (jetID[t] >>2 & 1) &&
-         jetPt[t] > 30 &&
+         jetPt[t] > 30.0 &&
          fabs(jetEta[t]) < 2.4 ) {
       CylFourVector cp4( jetPt[t], jetEta[t], jetPhi[t]);
       FourVector p4( cp4.X(), cp4.Y(), cp4.Z(), jetEn[t] );
@@ -116,22 +118,82 @@ auto getTightJets = [](const vector<int> jetID, const vector<float> jetPt, const
 };
 
 auto getMbtags = [](const vector<float> jetCSV2BJetTags) {
-  //vector<bool> list;
   int btags = 0;
   for (unsigned int t=0; t< jetCSV2BJetTags.size(); ++t ) {
-      //list.emplace_back( jetCSV2BJetTags[t] > 0.8484 );
+  
       if ( jetCSV2BJetTags[t] > 0.8484 ) btags++;
     }
   return btags;
 };
 
+auto listDeltaR1 = [](const FourVectors &list, const FourVectors &list2) {
+  FourVectors outlist;
+  if ( list2.size() == 0 ) return list;
+  for (auto &t : list) {
+    bool keep = false;
+    for (auto &t2 : list2) {
+      float deltaR = sqrt( pow(t.Eta() - t2.Eta(),2) + pow(t.Phi() - t2.Phi(),2) );
+      if ( deltaR >= 0.1 ) keep = true;
+    }
+    if (keep) outlist.emplace_back( t );
+  }
+  return outlist;
+};
 
+auto listDeltaR4 = [](const FourVectors &list, const FourVectors &list2) {
+  FourVectors outlist;
+  if ( list2.size() == 0 ) return list;
+  for (auto &t : list) {
+    bool keep = false;
+    for (auto &t2 : list2) {
+      float deltaR = sqrt( pow(t.Eta() - t2.Eta(),2) + pow(t.Phi() - t2.Phi(),2) );
+      if ( deltaR >= 0.4 ) keep = true;
+    }
+    if (keep) outlist.emplace_back( t );
+  }
+  return outlist;
+};
 
+auto getminDeltaR = [](const FourVectors &list, const FourVectors &list2) {
+
+  float deltaR = 1000.;
+  FourVector p4 = list2[0];
+  for (auto &t : list) {
+    float tmp = sqrt( pow(t.Eta() - p4.Eta(),2) + pow(t.Phi() - p4.Phi(),2) );
+    if ( tmp <= deltaR ) deltaR = tmp;
+  }
+  return deltaR;
+};
+
+auto getMphotons = [](const vector<float> phoEt, const vector<float> phoEta, const vector<float> phoSCEta, 
+                      const vector<float> phoPhi, const vector<unsigned short> phoIDbit, const vector<int> phohasPixelSeed) {
+  FourVectors list;
+  for (unsigned int t=0; t< phoEt.size(); ++t ) {
+    float absSCEta = fabs( phoSCEta[t] );
+    bool passEtaOverlap = (absSCEta < 1.4442) || (absSCEta > 1.566);
+    bool passMediumPhotonID = phoIDbit[t] >> 1 & 1;
+    if ( phoEt[t] > 15.0 &&
+         fabs( phoEta[t] ) < 2.5 &&
+         passEtaOverlap &&
+         passMediumPhotonID &&
+         !phohasPixelSeed[t] ) {
+      CylFourVector cp4( phoEt[t], phoEta[t], phoPhi[t]);
+      double M = 0;
+      double E = sqrt(cp4.R() * cp4.R() + M * M);
+      FourVector p4( cp4.X(), cp4.Y(), cp4.Z(), E );
+      list.emplace_back( p4 );
+    }
+  }
+  return list;
+};
 
 void tdf()
 {
   auto treeName = "ggNtuplizer/EventTree";
   auto fileName = "/uscms_data/d2/dnoonan/13TeV_TTGamma/TTGamma_SingleLeptFromTbar_100k.root";
+  auto outputfileName = "histos_100k.root";
+  //auto fileName = "root://cmseos.fnal.gov//store/user/troy2012/ntuples_2016/ttgamma_SingleLeptFromTbar.root";
+  //auto outputfileName = "histos_ttgamma.root";
 
   //ROOT::EnableImplicitMT();
 
@@ -175,42 +237,70 @@ void tdf()
   auto entries_vetoLmuons = dt_veto_L_muons.Count();
   cout << "veto loose muons = " << *entries_vetoLmuons << endl;
   // Veto electrons
-  auto dt_electrons = dt_veto_L_muons.Define( "vetoelectrons", getVetoElectrons, {"elePt","eleEta","elePhi","eleIDbit","eleD0","eleDz"} );
+  auto dt_electrons = dt_veto_L_muons.Define( "vetoelectrons", getVetoElectrons, {"elePt","eleEta","eleSCEta","elePhi","eleIDbit","eleD0","eleDz"} );
   auto dt_veto_electrons = dt_electrons.Filter( [](const FourVectors &list) { return list.size() == 0;}, {"vetoelectrons"} );
   auto entries_vetoElectrons = dt_veto_electrons.Count();
   cout << "veto electrons = " << *entries_vetoElectrons << endl;
   // Jet selection
-  auto dt_jets = dt_veto_electrons.Define( "jets", getTightJets, {"jetID","jetPt","jetEta","jetPhi","jetEn"} );
+  auto dt_jets_raw = dt_veto_electrons.Define( "jets_raw", getTightJets, {"jetID","jetPt","jetEta","jetPhi","jetEn"} );
+  //auto tmp = dt_jets_raw.Filter( [](const FourVectors &list) { return list.size() >= 3;}, {"jets_raw"} ).Count();
+  //cout << "gte3j no deltaR = " << *tmp << endl;
+  
+  // DeltaR(jet, muon) cut
+  auto dt_jets_no_muons = dt_jets_raw.Define( "jets_no_muons", listDeltaR4, {"jets_raw","tightmuons"} ); //drop jets
+  // get medium photons
+  auto dt_jets_gamma = dt_jets_no_muons.Define( "photons", getMphotons, {"phoEt","phoEta","phoSCEta","phoPhi","phoIDbit","phohasPixelSeed"} );
+  // DeltaR(jet, gamma) cut
+  auto dt_jets = dt_jets_gamma.Define( "jets", listDeltaR1, {"jets_no_muons","photons"} ); //drop jets
 
   auto dt_gte3j = dt_jets.Filter( [](const FourVectors &list) { return list.size() >= 3;}, {"jets"} );
   auto entries_gte3j = dt_gte3j.Count();
   cout << "gte3j = " << *entries_gte3j << endl;
 
-  auto dt_gte3jgte1b = dt_gte3j.Define("btags", getMbtags, {"jetCSV2BJetTags"} ).Filter( "btags >= 1");
+  // Write a tree
+  //cout << "Writing the skimmed tree ... ";
+  //dt_gte3j.Snapshot(treeName,"tiny.root");
+  //cout << "done" << endl;
+
+  auto dt_gte3jgte1b = dt_gte3j.Define("btags", getMbtags, {"jetCSV2BJetTags"} )
+    .Filter([](int btags) { return btags >= 1;}, {"btags"});
   auto entries_gte3jgte1b = dt_gte3jgte1b.Count();
   cout << "gte3jgte1b = " << *entries_gte3jgte1b <<endl;
 
-  // PU weight
-  auto dt_veto_L_muonsPU = dt_veto_L_muons.Define( "PUweight", getPUweight, {"nPUInfo","puBX", "puTrue"} );
- 
-  auto h_pvPU = dt_veto_L_muonsPU.Define("nVtxPU", "nVtx * PUweight")
-    .Histo1D(TH1D("PVPU","Vertices PU",40,0,40), "nVtxPU");
-  TCanvas c1pu;
-  h_pvPU->Draw();
-  c1pu.Print("pvpu.png");
-
-  auto h_pv = dt_veto_L_muons.Histo1D(TH1D("PV","Vertices",40,0,40), "nVtx");
-  TCanvas c1;
-  h_pv->Draw();
-  c1.Print("pv.png");
+  auto dt_deltaR_muj = dt_gte3jgte1b.Define("deltaRmuj", getminDeltaR, {"jets","tightmuons"} );
+  auto h_deltaR = dt_deltaR_muj.Histo1D(TH1D("deltaR","min deltaR(j,mu)",50,0,5), "deltaRmuj" );
   
-  auto h_mu_pt = dt_veto_L_muons.Define("themuPt", [](const FourVectors &list) { return list[0].Pt(); },{"tightmuons"} )
-    .Histo1D(TH1D("muPt","p_{T}",100,0,300), "themuPt");
-  TCanvas c2;
-  h_mu_pt->Draw();
-  c2.Print("mu_pt.png");
+  // PU weight
+  auto dt_gte3jgte1b_PU = dt_gte3jgte1b.Define( "PUweight", getPUweight, {"nPUInfo","puBX", "puTrue"} );
+ 
+  auto h_pvPU = dt_gte3jgte1b_PU.Define("nVtxPU", [](float weight, int nVtx){ return nVtx*weight;}, {"PUweight","nVtx"} )
+    .Histo1D(TH1D("PVPU","Vertices PU",50,0,50), "nVtxPU");
+  
+  //TCanvas c1pu;
+  //h_pvPU->Draw();
+  //c1pu.Print("pvpu.png");
+
+  auto h_pv = dt_gte3jgte1b.Histo1D(TH1D("PV","Vertices",50,0,50), "nVtx");
+  //TCanvas c1;
+  //h_pv->Draw();
+  //c1.Print("pv.png");
+  
+  auto h_mu_pt = dt_gte3jgte1b.Define("themuPt", [](const FourVectors &list) { return list[0].Pt(); },{"tightmuons"} )
+    .Histo1D(TH1D("muPt","p_{T}",100,30,400), "themuPt");
+  //TCanvas c2;
+  //h_mu_pt->Draw();
+  //c2.Print("mu_pt.png");
   cout << "entries in mu_pt " << h_mu_pt->GetEntries() << endl;
 
+  TFile *fFile = TFile::Open( outputfileName, "RECREATE");
+  cout << "Output root file: " << outputfileName << endl;
+  
+  h_deltaR->Write();
+  h_pv->Write();
+  h_pvPU->Write();
+  h_mu_pt->Write();
+
+  fFile->Close();
   //auto Muons = 
 
 }
