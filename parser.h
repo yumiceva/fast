@@ -32,6 +32,7 @@ public:
         ("input-file,i", po::value< vector<string> >()->multitoken(), "set input file(s).")
         ("max-events,m", po::value<int>(), "set a maximum number of events to be run.")
         ("parallel,p", po::value<string>()->implicit_value(""), "enable multi-threading.")
+        ("skim,s", po::value<string>(), "write a skimmed tree in a seperate root file.")
         ("verbose,v", po::value<string>()->implicit_value(""), "enable verbosity.")
         ;
 
@@ -54,22 +55,28 @@ public:
         jobname = "test";
       }
 
+      if (vm.count("skim")) {
+        skim = vm["skim"].as<string>();
+        cout << "Skim enabled, root filename set to: "
+             << skim << "\n";
+      } 
+
       if (vm.count("output-path")) {
         outpath = vm["output-path"].as<string>();
         cout << "Output path was set to: "
              << outpath << "\n";
       } else {
-        cout << "Output path was not set. Use flag -o. Path set to ./  \n" << "\n";
+        cout << "Output path was not set. Use flag -o. Path set to ./  " << "\n";
       }
 
       if (vm.count("input-file")) {
-        cout << "== Input file(s) was set to: " << "\n";
+        cout << "Input file(s) was set to: " << "\n";
         //<< vm["input-file"].as< vector<string> >() << "\n";
 
         inputfiles = vm["input-file"].as< vector<string> >();
         for ( vector<string>::iterator it = inputfiles.begin(); it != inputfiles.end(); it++ )
           {
-            cout << "== " << *it << endl;
+            cout << "  " << *it << endl;
           }
 
       } else {
@@ -107,10 +114,13 @@ public:
     if (status)
       cout << desc << "\n";
 
+    cout << "==" << endl;
+
   }
   ~parser() {}
   string JobName() { return jobname; }
   string OutputPath() { return outpath; }
+  string SkimName() { return skim; }
   vector<string> InputFiles() { return inputfiles; }
   bool Verbose() { return fverbose; }
   bool MT() { return fMT; }
@@ -123,7 +133,7 @@ private:
   bool fverbose;
   bool fMT;
   int fMaxEvents;
-
+  string skim;
 };
 
 #endif

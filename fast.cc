@@ -111,9 +111,12 @@ int main(int ac, char** av)
   cout << "gte3j = " << *entries_gte3j << endl;
 
   // Write a tree
-  //cout << "Writing the skimmed tree ... ";
-  //dt_gte3j.Snapshot(treeName,"tiny.root");
-  //cout << "done" << endl;
+  if ( parser.SkimName() != "" ) {
+    cout << "Writing a skimmed tree ... " << endl;
+    auto skimfilename = parser.SkimName();
+    dt_gte3j.Snapshot(treeName, skimfilename.c_str() );
+    cout << "done." << endl;
+  }
   
   auto dt_gte3jgte1b = dt_gte3j.Define("btags", getMbtags, {"jetCSV2BJetTags"} )
     .Filter([](int btags) { return btags >= 1;}, {"btags"});
