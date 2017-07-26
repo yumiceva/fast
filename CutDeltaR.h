@@ -37,7 +37,7 @@ auto listDeltaR4 = [](const FourVectors &list, const FourVectors &list2) {
 };
 
 auto getminDeltaR = [](const FourVectors &list, const FourVectors &list2) {
-
+  // minimum deltaR between a list of objects and the leading object of list 2
   float deltaR = 1000.;
   FourVector p4 = list2[0];
   for (auto &t : list) {

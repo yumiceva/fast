@@ -19,6 +19,10 @@ public:
     fMaxEvents = -1;
     fMT = false;
 
+    const string red("\033[0;31m");
+    const string bold("\033[1m");
+    const string reset("\033[0m");
+
     cout << "== Job configuration: " << endl;
     po::options_description desc("Allowed options");
 
@@ -42,31 +46,29 @@ public:
 
       
       if (vm.count("help")) {
-        cout << "Usage: <executable> [options]\n";
+        cout << bold << "Usage: <executable> [options]" << reset << endl;
         status = 1;
       }
 
       if (vm.count("job")) {
         jobname = vm["job"].as<string>();
-        cout << "Job name was set to: "
-             << jobname << "\n";
+        cout << "Job name was set to: " << bold << jobname << reset << endl;
       } else {
-        cout << "Job name was not set. Use flag -j. Name set to \"test\" \n" << "\n";
+        cout << "Job name was not set. Use flag -j. Name set to " << bold << "\"test\" " << reset << endl;
         jobname = "test";
       }
 
       if (vm.count("skim")) {
         skim = vm["skim"].as<string>();
-        cout << "Skim enabled, root filename set to: "
-             << skim << "\n";
+        cout << "Skim enabled, root filename set to: " << bold << skim << reset << endl;
+        if ( skim.find(".root") == string::npos ) cout << red << "Notice filename of skim file has not extension .root" << reset << endl; 
       } 
 
       if (vm.count("output-path")) {
         outpath = vm["output-path"].as<string>();
-        cout << "Output path was set to: "
-             << outpath << "\n";
+        cout << "Output path was set to: " << bold << outpath << reset << endl;
       } else {
-        cout << "Output path was not set. Use flag -o. Path set to ./  " << "\n";
+        cout << "Output path was not set. Use flag -o. Path set to " << bold << "./  " << reset << endl;
       }
 
       if (vm.count("input-file")) {
@@ -76,23 +78,21 @@ public:
         inputfiles = vm["input-file"].as< vector<string> >();
         for ( vector<string>::iterator it = inputfiles.begin(); it != inputfiles.end(); it++ )
           {
-            cout << "  " << *it << endl;
+            cout << bold << "  " << *it << reset << endl;
           }
 
       } else {
-        cout << "Input file(s) was not set. This option is required. Use flag -i." << "\n";
+        cout << red << "Input file(s) was not set. This option is required. Use flag -i." << reset << endl;
         status = 1;
       }
 
       if (vm.count("verbose")) {
-        cout << "Verbosity enabled."
-             << "\n";
+        cout << "Verbosity " << bold << "enabled." << reset << endl;
         fverbose = true;
       }
       
       if (vm.count("parallel")) {
-        cout << "Multi-threading enabled."
-             << "\n";
+        cout << "Multi-threading " << bold << "enabled." << reset << endl;
         fMT = true;
       }
 
@@ -114,7 +114,7 @@ public:
     if (status)
       cout << desc << "\n";
 
-    cout << "==" << endl;
+    cout << "== end configuration." << endl;
 
   }
   ~parser() {}
