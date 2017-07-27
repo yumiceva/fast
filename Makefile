@@ -7,7 +7,7 @@ LDFLAGS = `root-config --libs`
 INC += -I/cvmfs/cms.cern.ch/slc6_amd64_gcc630/external/boost/1.63.0-mlhled2/include
 #INC += -I$(CMSSW_FWLITE_INCLUDE_PATH)
 #LDFLAGS += -L$(CMSSW_RELEASE_BASE)/external/slc6_amd64_gcc491/lib/ -lboost_program_options -#lboost_date_time -lboost_iostreams
-LDFLAGS += -L/cvmfs/cms.cern.ch/slc6_amd64_gcc630/external/boost/1.63.0-mlhled2/lib -L$(LD_LIBRARY_PATH) -lTreePlayer -lboost_program_options -lboost_date_time -lboost_iostreams
+LDFLAGS += -L/cvmfs/cms.cern.ch/slc6_amd64_gcc630/external/boost/1.63.0-mlhled2/lib -L$(LD_LIBRARY_PATH) -lTreePlayer -lGenVector -lboost_program_options -lboost_date_time -lboost_iostreams
 
 SOURCES = PUReweight.cc
 #OBJECTS = $(SOURCES:.C=.o)

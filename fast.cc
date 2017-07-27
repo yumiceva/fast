@@ -15,7 +15,7 @@
 #include "CutElectron.h"
 #include "CutJet.h"
 #include "CutDeltaR.h"
-//#include "CutM3.h"
+#include "CutM3.h"
 #include "CutPhoton.h"
 #include "Histos.h"
 #include "PUReweight.h"
@@ -36,7 +36,7 @@ using FourVector = ROOT::Math::XYZTVector;
 using FourVectors = std::vector<FourVector>;
 using CylFourVector = ROOT::Math::RhoEtaPhiVector;
 
-bool operator<( const FourVector& tlv1, const FourVector& tlv2 ) { return tlv1.Pt() < tlv2.Pt(); }
+
 
 int main(int ac, char** av)
 {
@@ -183,7 +183,7 @@ int main(int ac, char** av)
   auto dt_deltaR_phoj = dt_pho_nomu_noj.Define("deltaRphoj", getminDeltaR, {"photons_nomunoj","jets"} ); // column of deltaR phoj
 
   // Calculate M3
-  //auto dt_M3 = dt_pho_nomu_noj.Define("M3", calcM3, {"jets"} ); // column of M3
+  auto dt_M3 = dt_pho_nomu_noj.Define("M3", calcM3, {"jets"} ); // column of M3
 
   // HISTOGRAMS _____________________________________
   cout << "Creating histograms ..." << endl;
@@ -195,7 +195,11 @@ int main(int ac, char** av)
 
   dt_gte3jgte1b.Foreach([](int b1) { h_pv_noPU.Fill(b1); }, {"nVtx"} );
   list_histos.emplace_back( h_pv_noPU );
-  
+
+  auto hh_mu1_pt = dt_gte3jgte1b.Define("themuPt", [](const FourVectors &list) { return list[0].Pt(); },{"tightmuons"} );
+  hh_mu1_pt.Foreach([](double b1) { h_mu1_pt.Fill(b1); }, {"themuPt"} );
+  list_histos.emplace_back( h_mu1_pt );
+
   /*
   auto hh_mu1_pt = dt_gte3jgte1b.Define("themuPt", [](const FourVectors &list) { return list[0].Pt(); },{"tightmuons"} )
     .Histo1D( TH1D(h_mu1_pt) , "themuPt");
