@@ -1,6 +1,7 @@
 #ifndef parser_H
 #define parser_H
 
+#include <iostream>
 #include <vector>
 #include <string>
 
@@ -114,7 +115,7 @@ public:
     if (status)
       cout << desc << "\n";
 
-    cout << "== end configuration." << endl;
+    cout << "== end configuration." << endl << endl;
 
   }
   ~parser() {}

@@ -15,6 +15,7 @@
 #include "CutElectron.h"
 #include "CutJet.h"
 #include "CutDeltaR.h"
+//#include "CutM3.h"
 #include "CutPhoton.h"
 #include "Histos.h"
 #include "PUReweight.h"
@@ -35,6 +36,7 @@ using FourVector = ROOT::Math::XYZTVector;
 using FourVectors = std::vector<FourVector>;
 using CylFourVector = ROOT::Math::RhoEtaPhiVector;
 
+bool operator<( const FourVector& tlv1, const FourVector& tlv2 ) { return tlv1.Pt() < tlv2.Pt(); }
 
 int main(int ac, char** av)
 {
@@ -170,8 +172,10 @@ int main(int ac, char** av)
   cout << format("%-25s %12.1f\n") % "gte3jgte1b" % counter["gte3jgte1b"];
 
   // DeltaR( gamma, muon ) cut ______________________
-  auto dt_pho_nomu = dt_gte3jgte1b.Define("photons_nomuons", listDeltaR4, {"photons_raw","tightmuons"} ); // drop photons
-  auto dt_pho_nomu_noj = dt_pho_nomu.Define("photons_nomunoj", listDeltaR4, {"photons_nomuons","jets"} ); // drop photons
+  //auto dt_pho_nomu = dt_gte3jgte1b.Define("photons_nomuons", listDeltaR4, {"photons_raw","tightmuons"} ); // drop photons
+  //auto dt_pho_nomu_noj = dt_pho_nomu.Define("photons_nomunoj", listDeltaR4, {"photons_nomuons","jets"} ); // drop photons
+  auto dt_pho_nomu_noj = dt_gte3jgte1b.Define("photons_nomuons", listDeltaR4, {"photons_raw","tightmuons"} )
+    .Define("photons_nomunoj", listDeltaR4, {"photons_nomuons","jets"} ); // drop photons
 
   //counter["pho_nomu"] = *(dt_pho_nomu.Count());
   //cout << format("%-25s %12.1f\n") % "photons no muons" % counter["pho_nomu"];
@@ -179,13 +183,20 @@ int main(int ac, char** av)
   auto dt_deltaR_phoj = dt_pho_nomu_noj.Define("deltaRphoj", getminDeltaR, {"photons_nomunoj","jets"} ); // column of deltaR phoj
 
   // Calculate M3
-  auto dt_M3 = dt_pho_nomu_noj.Define("M3", calcM3, {"jets"} ); // column of M3
+  //auto dt_M3 = dt_pho_nomu_noj.Define("M3", calcM3, {"jets"} ); // column of M3
 
   // HISTOGRAMS _____________________________________
   cout << "Creating histograms ..." << endl;
-  vector< ROOT::Experimental::TDF::TResultProxy<TH1D> > list_histos;
-  auto hh_pv_noPU = dt_gte3jgte1b.Histo1D( TH1D(h_pv_noPU), "nVtx");
-  list_histos.emplace_back( hh_pv_noPU );
+  //vector< ROOT::Experimental::TDF::TResultProxy<TH1D> > list_histos;
+  //auto hh_pv_noPU = dt_gte3jgte1b.Histo1D( TH1D{"h","h",10,0,10}, string("nVtx") );//TH1D(h_pv_noPU), "nVtx" );
+  //list_histos.emplace_back( hh_pv_noPU );
+
+  vector< TH1D > list_histos;
+
+  dt_gte3jgte1b.Foreach([](int b1) { h_pv_noPU.Fill(b1); }, {"nVtx"} );
+  list_histos.emplace_back( h_pv_noPU );
+  
+  /*
   auto hh_mu1_pt = dt_gte3jgte1b.Define("themuPt", [](const FourVectors &list) { return list[0].Pt(); },{"tightmuons"} )
     .Histo1D( TH1D(h_mu1_pt) , "themuPt");
   list_histos.emplace_back( hh_mu1_pt );
@@ -194,12 +205,13 @@ int main(int ac, char** av)
   auto hh_deltaR_phoj = dt_deltaR_phoj.Histo1D( TH1D(h_deltaR_phoj), "deltaRphoj" );
   list_histos.emplace_back( hh_deltaR_phoj );
   auto hh_M3 = dt_m3.Histo1D( TH1D(h_M3), "M3" );
+  */
 
   // Write histograms _______________________________
   auto outputfileName = parser.OutputPath() + "histos_"+ parser.JobName() + ".root";
   cout << "Writing histograms to " << "\033[1m" << outputfileName << "\033[0m";
   TFile *fFile = TFile::Open( outputfileName.c_str(), "RECREATE");
-  for ( auto &t : list_histos ) t->Write();
+  for ( auto &t : list_histos ) t.Write();
   cout << " done." << endl;
 
 

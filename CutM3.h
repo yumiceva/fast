@@ -7,6 +7,8 @@ using FourVector = ROOT::Math::XYZTVector;
 using FourVectors = std::vector<FourVector>;
 using CylFourVector = ROOT::Math::RhoEtaPhiVector;
 
+//bool operator<( const FourVector& tlv1, const FourVector& tlv2 ) { return tlv1.Pt() < tlv2.Pt(); }
+
 auto calcM3 = [](const FourVectors &list) {
   // Compute M3
   float M3 = -1;
