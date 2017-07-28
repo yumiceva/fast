@@ -62,7 +62,10 @@ public:
       if (vm.count("skim")) {
         skim = vm["skim"].as<string>();
         cout << "Skim enabled, root filename set to: " << bold << skim << reset << endl;
-        if ( skim.find(".root") == string::npos ) cout << red << "Notice filename of skim file has not extension .root" << reset << endl; 
+        if ( skim.find(".root") == string::npos ) {
+          cout << red << "Notice filename of skim file has not extension .root" << reset << endl; 
+          status = 1;
+        }
       } 
 
       if (vm.count("output-path")) {
