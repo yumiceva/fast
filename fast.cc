@@ -198,7 +198,7 @@ int main(int ac, char** av)
 
 
   // Calculate M3
-  //auto dt_M3 = dt_pho_nomu_noj.Define("M3", calcM3, {"jets"} ); // column of M3
+  auto dt_M3 = dt_pho_nomu_noj.Define("M3", calcM3, {"jets"} ); // column of M3
 
   // HISTOGRAMS _____________________________________
   cout << "Creating histograms ..." << endl;
@@ -214,6 +214,8 @@ int main(int ac, char** av)
   auto hh_mu1_pt = dt_gte3jgte1b.Define("themuPt", [](const FourVectors &list) { return list[0].Pt(); },{"tightmuons"} );
   hh_mu1_pt.Foreach([](double b1) { h_mu1_pt.Fill(b1); }, {"themuPt"} );
   list_histos.emplace_back( h_mu1_pt );
+  dt_M3.Foreach([](float b1) { h_M3.Fill(b1); }, {"M3"} );
+  list_histos.emplace_back( h_M3 );
 
   /*
   auto hh_mu1_pt = dt_gte3jgte1b.Define("themuPt", [](const FourVectors &list) { return list[0].Pt(); },{"tightmuons"} )
