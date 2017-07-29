@@ -66,6 +66,10 @@ public:
           cout << red << "Notice filename of skim file has not extension .root" << reset << endl; 
           status = 1;
         }
+        //if (vm.count("parallel")) {
+        //  cout << red << "Skimming with Multi-threading has not been tested. Run skim with multi-threading dissabled." << reset << endl;
+        //  status = 1;
+        //}
       } 
 
       if (vm.count("output-path")) {

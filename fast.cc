@@ -129,8 +129,12 @@ int main(int ac, char** av)
 
 
   // Write a tree _________________________________________
-  if ( parser.SkimName() != "" ) {
-    cout << "Writing a skimmed tree ... " << endl;
+  if ( parser.SkimName() != "" && false) {
+
+    if ( parser.MT() )
+      ROOT::DisableImplicitMT();
+
+    cout << endl << "Writing a skimmed tree ... " << endl;
     auto skimfilename = parser.SkimName();
     dt_skim.Snapshot(treeName, skimfilename.c_str() );
     cout << "done." << endl;
@@ -177,13 +181,24 @@ int main(int ac, char** av)
   auto dt_pho_nomu_noj = dt_gte3jgte1b.Define("photons_nomuons", listDeltaR4, {"photons_raw","tightmuons"} )
     .Define("photons_nomunoj", listDeltaR4, {"photons_nomuons","jets"} ); // drop photons
 
+
+  if ( parser.SkimName() != "") {
+
+    cout << endl << "Writing a mini skimmed tree ... " << endl;
+    auto skimfilename = parser.SkimName();
+    dt_skim.Snapshot(treeName, skimfilename.c_str(), {"nVtx","tightmuons","jets","jetCSV2BJetTags","photons_nomunoj"} );
+    cout << "done." << endl;
+
+  }
+
   //counter["pho_nomu"] = *(dt_pho_nomu.Count());
   //cout << format("%-25s %12.1f\n") % "photons no muons" % counter["pho_nomu"];
   auto dt_deltaR_phomu = dt_pho_nomu_noj.Define("deltaRphomu", getminDeltaR, {"photons_nomunoj","tightmuons"} ); // column of deltaR phomu
   auto dt_deltaR_phoj = dt_pho_nomu_noj.Define("deltaRphoj", getminDeltaR, {"photons_nomunoj","jets"} ); // column of deltaR phoj
 
+
   // Calculate M3
-  auto dt_M3 = dt_pho_nomu_noj.Define("M3", calcM3, {"jets"} ); // column of M3
+  //auto dt_M3 = dt_pho_nomu_noj.Define("M3", calcM3, {"jets"} ); // column of M3
 
   // HISTOGRAMS _____________________________________
   cout << "Creating histograms ..." << endl;

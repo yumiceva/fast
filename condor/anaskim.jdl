@@ -1,0 +1,18 @@
+universe = vanilla
+Executable = run_fast_skim.sh
+
+should_transfer_files = YES
+WhenTOTransferOutput  = ON_EXIT
+notification = never
+Transfer_input_files = CMSSW.tgz
+
+Output = log/muSkim_$(cluster)_$(process).stdout
+Error  = log/muSkim_$(cluster)_$(process).stderr
+Log    = log/muSkim_$(cluster)_$(process).condor
+Requirements          = (OpSys == "LINUX" && (Arch != "DUMMY"))
+Arguments = $(process)
+#use_x509userproxy = true
+x509userproxy = $ENV(X509_USER_PROXY)
+# important, number of instances (jobs) of script
+#Queue 42
+Queue 1
