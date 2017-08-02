@@ -129,6 +129,7 @@ int main(int ac, char** av)
 
 
   // Write a tree _________________________________________
+  // no for the moment
   if ( parser.SkimName() != "" && false) {
 
     if ( parser.MT() )
@@ -178,6 +179,8 @@ int main(int ac, char** av)
   // DeltaR( gamma, muon ) cut ______________________
   //auto dt_pho_nomu = dt_gte3jgte1b.Define("photons_nomuons", listDeltaR4, {"photons_raw","tightmuons"} ); // drop photons
   //auto dt_pho_nomu_noj = dt_pho_nomu.Define("photons_nomunoj", listDeltaR4, {"photons_nomuons","jets"} ); // drop photons
+
+  // clean photons
   auto dt_pho_nomu_noj = dt_gte3jgte1b.Define("photons_nomuons", listDeltaR4, {"photons_raw","tightmuons"} )
     .Define("photons_nomunoj", listDeltaR4, {"photons_nomuons","jets"} ); // drop photons
 
@@ -186,7 +189,7 @@ int main(int ac, char** av)
 
     cout << endl << "Writing a mini skimmed tree ... " << endl;
     auto skimfilename = parser.SkimName();
-    dt_skim.Snapshot(treeName, skimfilename.c_str(), {"nVtx","tightmuons","jets","jetCSV2BJetTags","photons_nomunoj"} );
+    dt_pho_nomu_noj.Snapshot(treeName, skimfilename.c_str(), {"nVtx","tightmuons","jets","jetCSV2BJetTags","photons_nomunoj","phoEt","phoEta","phoSCEta","phoPhi","phoIDbit","phohasPixelSeed" } );
     cout << "done." << endl;
 
   }
@@ -208,6 +211,17 @@ int main(int ac, char** av)
 
   vector< TH1D > list_histos;
 
+  // write cutflow histogram in the skimmed file
+  TH1D hcutflow = TH1D("cutflow","cutflow skim", int(counterlabels.size()), 0, int(counterlabels.size()) );
+  int ibin = 1;
+  for ( vector<string>::iterator ii = counterlabels.begin(); ii != counterlabels.end(); ++ii) {
+    hcutflow.SetBinContent( ibin, counter[*ii] );
+    hcutflow.GetXaxis()->SetBinLabel(ibin, (*ii).c_str() );
+    ibin++;
+  }
+  list_histos.emplace_back( hcutflow );
+
+  
   dt_gte3jgte1b.Foreach([](int b1) { h_pv_noPU.Fill(b1); }, {"nVtx"} );
   list_histos.emplace_back( h_pv_noPU );
 
